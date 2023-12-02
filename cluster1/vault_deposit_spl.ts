@@ -12,7 +12,7 @@ import {
   AnchorProvider,
   Address,
   BN,
-} from "@project-serum/anchor";
+} from "@coral-xyz/anchor";
 import { WbaVault, IDL } from "../programs/wba_vault";
 import wallet from "../wba-wallet.json";
 import {
@@ -39,7 +39,7 @@ const provider = new AnchorProvider(connection, new Wallet(keypair), {
 const program = new Program<WbaVault>(IDL, "D51uEDHLbWAxNfodfQDv7qkp8WZtxrhi3uganGbNos7o" as Address, provider);
 
 // Create a random keypair
-const vaultState = new PublicKey("8UhhauSfY5ELENv5KzvJ1JAq9e2m2aAd5G6rZn1fd88n")
+const vaultState = new PublicKey("8eNhg86XChXEtHLej8FkFPwKxkVGeK6Wm4JBNNvzDh4y")
 
 // Create the PDA for our enrollment account
 // Seeds are "auth", vaultState
@@ -50,12 +50,12 @@ const [vaultAuth, _bump] = PublicKey.findProgramAddressSync(
   program.programId
 );
 // Mint address
-const mint = new PublicKey("3i8TeULR183fjegLPR6s1SdcKkp6oiZ4THLft6ppqsB8");
+const mint = new PublicKey("BamJPzbY9icNMu6gUozgbvXtfigyEX51MnZL2PQcQtV3");
 
 // Execute our enrollment transaction
 (async () => {
   try {
-    // Get the token account of the fromWallet address, and if it does not exist, create it
+    // Get the token account of the WBA address, and if it does not exist, create it
     const ownerAta = await getOrCreateAssociatedTokenAccount(
       connection,
       keypair,
@@ -63,17 +63,15 @@ const mint = new PublicKey("3i8TeULR183fjegLPR6s1SdcKkp6oiZ4THLft6ppqsB8");
       keypair.publicKey,
       undefined
     );
-    // Get the token account of the fromWallet address, and if it does not exist, create it
+    // Get the token account of the vault address, and if it does not exist, create it
     const vaultAta = await getOrCreateAssociatedTokenAccount(
       connection,
       keypair,
       mint,
       vaultAuth,
-      true,
-      commitment
+      true
     );
-
-    console.log("vaultAta", vaultAta.address.toBase58());
+    console.log("sending deposit SPL transaction");
     const signature = await program.methods
       .depositSpl(new BN(LAMPORTS_PER_SOL))
       .accounts({
@@ -89,9 +87,8 @@ const mint = new PublicKey("3i8TeULR183fjegLPR6s1SdcKkp6oiZ4THLft6ppqsB8");
       })
       .signers([keypair])
       .rpc();
-
     console.log(
-      `Deposit success! Check out your TX here:\n\nhttps://explorer.solana.com/tx/${signature}?cluster=devnet`
+      `Deposit SPL success! Check out your TX here:\n\nhttps://explorer.solana.com/tx/${signature}?cluster=devnet`
     );
   } catch (e) {
     console.error(`Oops, something went wrong: ${e}`);

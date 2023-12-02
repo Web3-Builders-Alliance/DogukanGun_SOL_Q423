@@ -34,7 +34,7 @@ const provider = new AnchorProvider(connection, new Wallet(keypair), {
 const program = new Program<WbaVault>(IDL, "D51uEDHLbWAxNfodfQDv7qkp8WZtxrhi3uganGbNos7o" as Address, provider);
 
 // Create a random keypair
-const vaultState = new PublicKey("8UhhauSfY5ELENv5KzvJ1JAq9e2m2aAd5G6rZn1fd88n")
+const vaultState = new PublicKey("8eNhg86XChXEtHLej8FkFPwKxkVGeK6Wm4JBNNvzDh4y")
 
 // Create the PDA for our enrollment account
 // Seeds are "auth", vaultState
