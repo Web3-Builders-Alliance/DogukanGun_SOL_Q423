@@ -20,14 +20,20 @@ pub struct Make<'info> {
 
     #[account(
         init, 
-        space=Escrow::LEN, 
+        space=Escrow::INIT_SPACE, 
         seeds=[b"escrow".as_ref(), maker.key().as_ref()], 
-        bump=escrow.bump, 
+        bump,
+        payer=maker,
+    )]
+    pub escrow: Account<'info, Escrow>,
+
+    #[account(
+        init, 
         payer=maker,
         token::mint=mint_a,
         token::authority=escrow,
     )]
-    pub escrow: Account<'info, Escrow>,
+    pub vault: Account<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
@@ -35,7 +41,7 @@ pub struct Make<'info> {
 
 }
 
-pub impl<'info> Make<'info> {
+ impl<'info> Make<'info> {
     pub fn save(&mut self,recieve:u64,bumps: &MakeBumps) -> Result<()> {
         /*self.escrow.set_inner(Escrow {
             seed,
@@ -54,12 +60,12 @@ pub impl<'info> Make<'info> {
     pub fn deposit(&mut self,deposit:u64) -> Result<()> {
         let transfer_accounts = Transfer {
             from: self.maker_ata_a.to_account_info(),
-            to: self.escrow.to_account_info(),
+            to: self.vault.to_account_info(),
             authority: self.maker.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(self.token_program.clone(), transfer_accounts);
+        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts);
 
-        transfer(cpi_ctx, deposit);
+        let _ = transfer(cpi_ctx, deposit);
         Ok(())
     }
 }

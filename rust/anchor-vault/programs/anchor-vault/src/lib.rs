@@ -9,50 +9,44 @@ pub mod anchor_vault {
 
     use super::*;
 
-    pub fn deposit(ctx: Context<Vault>,lamports: u64) -> Result<()> {
-        let accounts = Transfer {
-            from: ctx.accounts.signer.to_account_info(),
+    pub fn deposit(ctx: Context<Vault>, amount: u64) -> Result<()> {
+        let cpi_program = ctx.accounts.system_program.to_account_info();
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.owner.to_account_info(),
             to: ctx.accounts.vault.to_account_info(),
         };
-
-        let cpi_ctx = CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
-            accounts,
-        );
-
-        transfer(cpi_ctx, lamports)
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+        transfer(cpi_ctx, amount)
     }
 
-    pub fn close(ctx: Context<Vault>,lamports: u64) -> Result<()> {
-        let accounts = Transfer {
-            from: ctx.accounts.vault.to_account_info().clone(),
-            to: ctx.accounts.signer.to_account_info().clone(),
+    pub fn close(ctx: Context<Vault>, amount: u64) -> Result<()> {
+        let cpi_program = ctx.accounts.system_program.to_account_info();
+        let cpi_accounts = Transfer {
+            from: ctx.accounts.vault.to_account_info(),
+            to: ctx.accounts.owner.to_account_info(),
         };
 
-        msg!("Transferring tokens to signer account");
+        let seeds = &[
+            "vault".as_bytes(),
+            ctx.accounts.owner.key.as_ref(),
+            &[ctx.bumps.vault],
+        ];
+        let signer_seeds = &[&seeds[..]];
 
-        let signer_seeds: [&[&[u8]]; 1] = [&[b"vault", &ctx.accounts.signer.to_account_info().key.as_ref(),&[ctx.bumps.vault]]]; 
-
-        let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.system_program.to_account_info(),
-            accounts,
-            &signer_seeds,
-        );
-
-        transfer(cpi_ctx, lamports)
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signer_seeds);
+        transfer(cpi_ctx, amount)
     }
 }
 
 #[derive(Accounts)]
 pub struct Vault<'info> {
-
     #[account(mut)]
-    pub signer: Signer<'info>,
-
+    pub owner: Signer<'info>,
     #[account(
-        seeds = [b"vault",signer.key().as_ref()],
+        mut,
+        seeds = [b"vault", owner.key().as_ref()],
         bump
     )]
     pub vault: SystemAccount<'info>,
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
 }

@@ -33,16 +33,22 @@ pub struct Take<'info> {
         associated_token::authority = maker
     )]
     pub maker_ata_b: Account<'info, TokenAccount>,
+    #[account(
+        init, 
+        space=Escrow::INIT_SPACE, 
+        seeds=[b"escrow".as_ref(), maker.key().as_ref()], 
+        bump,
+        payer=maker,
+    )]
+    pub escrow: Account<'info, Escrow>,
 
     #[account(
-        mut,
-        close=maker,
-        seeds=[b"escrow".as_ref(), maker.key().as_ref()], 
-        bump=escrow.bump, 
+        init, 
+        payer=maker,
         token::mint=mint_a,
         token::authority=escrow,
     )]
-    pub escrow: Account<'info, Escrow>,
+    pub vault: Account<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
@@ -50,7 +56,7 @@ pub struct Take<'info> {
 
 }
 
-pub impl<'info> Take<'info> {
+impl<'info> Take<'info> {
 
     pub fn take(&mut self,amount: u64) -> Result<()> {
         let transfer_accounts = Transfer {
@@ -58,32 +64,32 @@ pub impl<'info> Take<'info> {
             to: self.maker_ata_b.to_account_info(),
             authority: self.taker.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new(self.token_program.clone(), transfer_accounts);
+        let cpi_ctx = CpiContext::new(self.token_program.to_account_info(), transfer_accounts);
 
-        transfer(cpi_ctx, self.escrow.recieve);
+        let _ = transfer(cpi_ctx, self.escrow.recieve);
 
         let transfer_accounts = Transfer {
             from: self.escrow.to_account_info(),
             to: self.taker_ata_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
-        let signer_seeds: [&[&[u8]];1] = [
+        /*let signer_seeds: &[&[&[u8]];1] = [
             &[
                 b"escrow", 
                 self.maker.to_account_info().key.as_ref(), 
                 [..],
                 &[self.escrow.escrow_bump]
             ]
-        ];
-        /*let seeds = &[
+        ];*/
+        let seeds = &[
             "escrow".as_bytes(),
             self.maker.to_account_info().key.as_ref(), 
-            &[self.escrow.escrow_bump]
+            &[self.escrow.bump]
         ];
-        let signer_seeds = &[&seeds[..]];*/
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.clone(), transfer_account, signer_seeds);
+        let signer_seeds = &[&seeds[..]];
+        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), transfer_accounts, signer_seeds);
 
-        transfer(cpi_ctx, amount);
+        let _ = transfer(cpi_ctx, amount);
         Ok(())
     }
 

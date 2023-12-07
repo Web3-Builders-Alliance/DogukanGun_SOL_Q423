@@ -19,14 +19,21 @@ pub struct Close<'info> {
     pub maker_ata_a: Account<'info, TokenAccount>,
 
     #[account(
-        mut,
-        close=maker,
+        init, 
+        space=Escrow::INIT_SPACE, 
         seeds=[b"escrow".as_ref(), maker.key().as_ref()], 
-        bump=escrow.bump, 
+        bump,
+        payer=maker,
+    )]
+    pub escrow: Account<'info, Escrow>,
+
+    #[account(
+        init, 
+        payer=maker,
         token::mint=mint_a,
         token::authority=escrow,
     )]
-    pub escrow: Account<'info, Escrow>,
+    pub vault: Account<'info, TokenAccount>,
 
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub token_program: Program<'info, Token>,
@@ -37,20 +44,18 @@ pub struct Close<'info> {
 impl<'info> Close<'info> {
     pub fn refund(&mut self,refund:u64) -> Result<()> {
         let transfer_accounts = Transfer {
-            from: self.escrow.to_account_info(),
+            from: self.vault.to_account_info(),
             to: self.maker_ata_a.to_account_info(),
             authority: self.escrow.to_account_info(),
         };
-        let signer_seeds: [&[&[u8]];1] = [
-            &[
-                b"escrow", 
-                self.maker.to_account_info().key.as_ref(), 
-                [..],
-                &[self.escrow.escrow_bump]
-            ]
+        let seeds = &[
+            "escrow".as_bytes(),
+            self.maker.to_account_info().key.as_ref(), 
+            &[self.escrow.bump]
         ];
-        let cpi_ctx = CpiContext::new_with_signer(self.token_program.clone(), transfer_accounts, signer_seeds);
-        transfer(cpi_ctx, refund);
+        let signer_seeds = &[&seeds[..]];
+        let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), transfer_accounts, signer_seeds);
+        let _ = transfer(cpi_ctx, refund);
         Ok(())
     }
 }

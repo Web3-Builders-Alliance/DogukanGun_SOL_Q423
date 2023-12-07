@@ -1,5 +1,5 @@
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import { Program, BN } from "@coral-xyz/anchor";
 import { Escrow } from "../target/types/escrow";
 import { ConfirmOptions, CreateAccountParams, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { ASSOCIATED_TOKEN_PROGRAM_ID, MINT_SIZE, TOKEN_PROGRAM_ID, createAssociatedTokenAccount, createAssociatedTokenAccountIdempotentInstruction, createAssociatedTokenAccountInstruction, createInitializeMint2Instruction, createMint, createMintToInstruction, getAssociatedTokenAddressSync, getMinimumBalanceForRentExemptAccount, getMinimumBalanceForRentExemptMint, initializeMintInstructionData, mintTo } from "@solana/spl-token";
@@ -13,7 +13,7 @@ describe("anchor-escrow", () => {
 
   const connection = provider.connection;
 
-  const program = anchor.workspace.AnchorEscrow as Program<Escrow>;
+  const program = anchor.workspace.Escrow as Program<Escrow>;
 
   const confirm = async (signature: string): Promise<string> => {
     const block = await connection.getLatestBlockhash();
@@ -113,4 +113,10 @@ describe("anchor-escrow", () => {
     ]).then(log)
   })
 
-  it("Make", async () => {
+  it("Create escrow", async () => { 
+    await program.methods
+    .make(new anchor.BN(LAMPORTS_PER_SOL), new anchor.BN(LAMPORTS_PER_SOL),)
+    .rpc().then(log);
+  })
+
+})
