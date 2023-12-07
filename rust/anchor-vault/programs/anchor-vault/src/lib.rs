@@ -47,12 +47,12 @@ pub mod anchor_vault {
 pub struct Vault<'info> {
 
     #[account(mut)]
-    signer: Signer<'info>,
+    pub signer: Signer<'info>,
 
     #[account(
         seeds = [b"vault",signer.key().as_ref()],
         bump
     )]
-    vault: SystemAccount<'info>,
-    system_program: Program<'info, System>
+    pub vault: SystemAccount<'info>,
+    pub system_program: Program<'info, System>
 }
