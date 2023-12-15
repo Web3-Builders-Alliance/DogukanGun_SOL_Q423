@@ -17,13 +17,13 @@ pub mod escrow {
         Ok(())
     }
 
-    pub fn take(ctx: Context<Take>,amount:u64) -> Result<()> {
-        let _ = ctx.accounts.take(amount);
+    pub fn take(ctx: Context<Take>) -> Result<()> {
+        let _ = ctx.accounts.take();
         Ok(())
     }
 
-    pub fn close(ctx: Context<Close>,refund:u64) -> Result<()> {
-        let _ = ctx.accounts.refund(refund);
+    pub fn close(ctx: Context<Close>) -> Result<()> {
+        let _ = ctx.accounts.refund();
         Ok(())
     }
 

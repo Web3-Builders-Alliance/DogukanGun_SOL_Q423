@@ -30,6 +30,8 @@ pub struct Make<'info> {
     #[account(
         init, 
         payer=maker,
+        seeds=[b"vault",escrow.key().as_ref()],
+        bump,
         token::mint=mint_a,
         token::authority=escrow,
     )]

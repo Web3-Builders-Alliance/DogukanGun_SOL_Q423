@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::{token::{Mint, TokenAccount, Token, Transfer, transfer}, associated_token::AssociatedToken};
+use anchor_spl::{token::{Mint, TokenAccount, Token, Transfer, transfer, CloseAccount, close_account}, associated_token::AssociatedToken};
 use crate::state::Escrow;
 
 
@@ -42,7 +42,7 @@ pub struct Close<'info> {
 }
 
 impl<'info> Close<'info> {
-    pub fn refund(&mut self,refund:u64) -> Result<()> {
+    pub fn refund(&mut self) -> Result<()> {
         let transfer_accounts = Transfer {
             from: self.vault.to_account_info(),
             to: self.maker_ata_a.to_account_info(),
@@ -55,7 +55,20 @@ impl<'info> Close<'info> {
         ];
         let signer_seeds = &[&seeds[..]];
         let cpi_ctx = CpiContext::new_with_signer(self.token_program.to_account_info(), transfer_accounts, signer_seeds);
-        let _ = transfer(cpi_ctx, refund);
+        let _ = transfer(cpi_ctx, self.vault.amount)?;
+        let accounts = CloseAccount {
+            account: self.vault.to_account_info(),
+            destination: self.maker.to_account_info(),
+            authority: self.escrow.to_account_info()
+        };
+
+        let ctx = CpiContext::new_with_signer(
+            self.token_program.to_account_info(), 
+            accounts,
+            signer_seeds
+        );
+
+        let _ = close_account(ctx);
         Ok(())
     }
 }
